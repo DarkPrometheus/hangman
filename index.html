@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Ahorcado</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Hangman</h1>
+        
+        <canvas id="hangmanCanvas" width="200" height="230"></canvas>
+        
+        <div id="word-display">Loading config...</div>
+        
+        <div id="message"></div>
+        
+        <div id="keyboard"></div>
+        
+        <button id="reset-btn" onclick="initGame()">Play again</button>
+    </div>
+
+    <script>
+        // Variables globales que se llenarán con los archivos JSON
+        let words = []; 
+        let maxMistakes = 6; // Valor por defecto por si falla el JSON
+        
+        let selectedWord = "";
+        let guessedLetters = [];
+        let mistakes = 0;
+
+        const wordDisplay = document.getElementById("word-display");
+        const keyboard = document.getElementById("keyboard");
+        const message = document.getElementById("message");
+        const canvas = document.getElementById("hangmanCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Todos los trazos posibles para dibujar el monito por completo (Máximo 7 pasos con la horca)
+        const allDrawStages = [
+            // 0. La Horca
+            () => {
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#333";
+                ctx.beginPath();
+                ctx.moveTo(10, 220); ctx.lineTo(150, 220);
+                ctx.moveTo(40, 220); ctx.lineTo(40, 20);
+                ctx.lineTo(120, 20);
+                ctx.lineTo(120, 50);
+                ctx.stroke();
+            },
+            // 1. Cabeza
+            () => { ctx.beginPath(); ctx.arc(120, 70, 20, 0, Math.PI * 2); ctx.stroke(); },
+            // 2. Cuerpo
+            () => { ctx.beginPath(); ctx.moveTo(120, 90); ctx.lineTo(120, 150); ctx.stroke(); },
+            // 3. Brazo izquierdo
+            () => { ctx.beginPath(); ctx.moveTo(120, 110); ctx.lineTo(90, 130); ctx.stroke(); },
+            // 4. Brazo derecho
+            () => { ctx.beginPath(); ctx.moveTo(120, 110); ctx.lineTo(150, 130); ctx.stroke(); },
+            // 5. Pierna izquierda
+            () => { ctx.beginPath(); ctx.moveTo(120, 150); ctx.lineTo(90, 190); ctx.stroke(); },
+            // 6. Pierna derecha
+            () => { ctx.beginPath(); ctx.moveTo(120, 150); ctx.lineTo(150, 190); ctx.stroke(); }
+        ];
+
+        // Función para cargar todos los recursos externos antes de iniciar
+        async function loadGameResources() {
+            try {
+                // Hacemos fetch de ambos archivos al mismo tiempo
+                const [wordsResponse, configResponse] = await Promise.all([
+                    fetch('words.json'),
+                    fetch('config.json')
+                ]);
+
+                if (!wordsResponse.ok || !configResponse.ok) {
+                    throw new Error("Error al buscar los archivos JSON.");
+                }
+
+                words = await wordsResponse.json();
+                const config = await configResponse.json();
+                
+                // Asignamos el valor del JSON externo
+                maxMistakes = parseInt(config.maxMistakes) || 6;
+
+                // Inicializamos el juego básico
+                initGame();
+            } catch (error) {
+                console.error("Error inicializando la app:", error);
+                wordDisplay.textContent = "Error de configuración";
+                message.textContent = "Asegúrate de que 'words.json' y 'config.json' existan.";
+                message.className = "lose";
+            }
+        }
+
+        function initGame() {
+            if (words.length === 0) return;
+
+            selectedWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+            guessedLetters = [];
+            mistakes = 0;
+            
+            message.textContent = "";
+            message.className = "";
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            allDrawStages[0](); // Dibuja la horca siempre al inicio
+            
+            createKeyboard();
+            updateWordDisplay();
+        }
+
+        function createKeyboard() {
+            keyboard.innerHTML = "";
+            const alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+            
+            alphabet.split("").forEach(letter => {
+                const button = document.createElement("button");
+                button.textContent = letter;
+                button.classList.add("btn-letter");
+                button.onclick = () => handleGuess(letter, button);
+                keyboard.appendChild(button);
+            });
+        }
+
+        function updateWordDisplay() {
+            const display = selectedWord.split("").map(letter => {
+                return guessedLetters.includes(letter) ? letter : "_";
+            }).join(" ");
+            
+            wordDisplay.textContent = display;
+            
+            if (!display.includes("_")) {
+                message.textContent = "You won! 🎉";
+                message.className = "win";
+                disableAllButtons();
+            }
+        }
+
+        function handleGuess(letter, button) {
+            button.disabled = true;
+            
+            if (selectedWord.includes(letter)) {
+                guessedLetters.push(letter);
+                updateWordDisplay();
+            } else {
+                mistakes++;
+                
+                // Mapeo dinámico para que el monito se termine de dibujar justo en el último fallo configurado
+                // Si maxMistakes es menor a 6, se saltará pasos lógicos para pintar las partes críticas.
+                const totalBodyParts = allDrawStages.length - 1; // 6 partes del cuerpo
+                const stageIndex = Math.ceil((mistakes / maxMistakes) * totalBodyParts);
+                
+                // Dibuja hasta la parte que corresponde proporcionalmente
+                for (let i = 1; i <= stageIndex; i++) {
+                    if (allDrawStages[i]) allDrawStages[i]();
+                }
+                
+                // Verificar derrota
+                if (mistakes >= maxMistakes) {
+                    message.textContent = `You lost! Answer: ${selectedWord}`;
+                    message.className = "lose";
+                    
+                    // Por si acaso quedaron partes sin dibujar debido a la división, dibuja el monito completo al morir
+                    allDrawStages.forEach(draw => draw());
+                    disableAllButtons();
+                }
+            }
+        }
+
+        function disableAllButtons() {
+            const buttons = document.querySelectorAll(".btn-letter");
+            buttons.forEach(btn => btn.disabled = true);
+        }
+
+        // Ejecuta la carga paralela al abrir la web
+        loadGameResources();
+    </script>
+</body>
+</html>
