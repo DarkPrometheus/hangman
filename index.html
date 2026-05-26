@@ -38,11 +38,12 @@
         const ctx = canvas.getContext("2d");
 
         // Todos los trazos posibles para dibujar el monito por completo (Máximo 7 pasos con la horca)
+        // Todos los trazos posibles para dibujar el monito por completo (Máximo 7 pasos con la horca)
         const allDrawStages = [
             // 0. La Horca
             () => {
                 ctx.lineWidth = 4;
-                ctx.strokeStyle = "#333";
+                ctx.strokeStyle = "#ffffff"; // Blanco para que resalte en modo oscuro
                 ctx.beginPath();
                 ctx.moveTo(10, 220); ctx.lineTo(150, 220);
                 ctx.moveTo(40, 220); ctx.lineTo(40, 20);
@@ -51,17 +52,58 @@
                 ctx.stroke();
             },
             // 1. Cabeza
-            () => { ctx.beginPath(); ctx.arc(120, 70, 20, 0, Math.PI * 2); ctx.stroke(); },
+            () => { 
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#ffffff";
+                ctx.beginPath(); 
+                ctx.arc(120, 70, 20, 0, Math.PI * 2); 
+                ctx.stroke(); 
+            },
             // 2. Cuerpo
-            () => { ctx.beginPath(); ctx.moveTo(120, 90); ctx.lineTo(120, 150); ctx.stroke(); },
+            () => { 
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#ffffff";
+                ctx.beginPath(); 
+                ctx.moveTo(120, 90); 
+                ctx.lineTo(120, 150); 
+                ctx.stroke(); 
+            },
             // 3. Brazo izquierdo
-            () => { ctx.beginPath(); ctx.moveTo(120, 110); ctx.lineTo(90, 130); ctx.stroke(); },
+            () => { 
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#ffffff";
+                ctx.beginPath(); 
+                ctx.moveTo(120, 110); 
+                ctx.lineTo(90, 130); 
+                ctx.stroke(); 
+            },
             // 4. Brazo derecho
-            () => { ctx.beginPath(); ctx.moveTo(120, 110); ctx.lineTo(150, 130); ctx.stroke(); },
-            // 5. Pierna izquierda
-            () => { ctx.beginPath(); ctx.moveTo(120, 150); ctx.lineTo(90, 190); ctx.stroke(); },
+            () => { 
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#ffffff";
+                ctx.beginPath(); 
+                ctx.moveTo(120, 110); 
+                ctx.lineTo(150, 130); 
+                ctx.stroke(); 
+            },
+            // 5. Pierna izquierdo
+            () => { 
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#ffffff";
+                ctx.beginPath(); 
+                ctx.moveTo(120, 150); 
+                ctx.lineTo(90, 190); 
+                ctx.stroke(); 
+            },
             // 6. Pierna derecha
-            () => { ctx.beginPath(); ctx.moveTo(120, 150); ctx.lineTo(150, 190); ctx.stroke(); }
+            () => { 
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#ffffff";
+                ctx.beginPath(); 
+                ctx.moveTo(120, 150); 
+                ctx.lineTo(150, 190); 
+                ctx.stroke(); 
+            }
         ];
 
         // Función para cargar todos los recursos externos antes de iniciar
